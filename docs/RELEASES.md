@@ -27,11 +27,11 @@ small / open models (observed on a local DGX vLLM endpoint).
 
 ### Changed
 
-- Splash rebuilt in the Fan Monitor / Agentic Builders Collective style:
-  salmon rounded frame on near-black, A.N.D.R.E.W slab wordmark filling
-  top-to-bottom in the peach → coral gradient, dotted rule, lowercase
-  sweep tagline, animated status dots. The `andrew` shell command launches
-  tsx directly — no more `npm run dev` banner above the splash.
+- Splash rebuilt in a Fan Monitor-style layout using ANDREW's own teal palette:
+  teal rounded frame on near-black, A.N.D.R.E.W slab wordmark filling
+  top-to-bottom in a mint → teal gradient, dotted rule, lowercase sweep
+  tagline, animated status dots, amber continue prompt. The `andrew` shell
+  command launches tsx directly — no more `npm run dev` banner above the splash.
 
 ## v0.1.0 — 2026-09-05
 

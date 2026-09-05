@@ -1,26 +1,28 @@
 /**
- * ANDREW brand block — palette + slab wordmark, styled after the Agentic
- * Builders Collective / Fan Monitor aesthetic: five horizontal slab rows per
- * letter, upper-half blocks so rows read as slices, peach → coral gradient
- * top to bottom, italic lean toward the top, dotted rust rule.
- * (Palette sampled from fanmon/brand.py.)
+ * ANDREW brand block — slab wordmark in the app's own teal family (the
+ * original v0.1 splash colours), laid out Fan Monitor / Agentic Builders
+ * Collective style: five horizontal slab rows per letter, upper-half blocks
+ * so rows read as slices, light-mint → deep-teal gradient top to bottom,
+ * italic lean toward the top, dotted rule in dark teal.
  */
 
 // --- palette -----------------------------------------------------------------
 export const INK = '#0B0A12'; // background: near-black navy
-export const SALMON = '#EF8E64'; // box border, middle slab
-export const PEACH = '#F5A86B'; // lightest brand colour
-export const CORAL = '#E86F5E'; // darkest brand colour
-export const RUST = '#6B3226'; // pre-reveal slabs / dotted rule
-export const MUTED = '#8E8489'; // captions
+export const MINT = '#A8EFE0'; // lightest brand colour
+export const TEAL = '#34BE9B'; // darkest brand colour, box border
+export const DEEP = '#1C4F45'; // pre-reveal slab outline
+export const RULE_COLOR = '#2C6E60'; // dotted rule
+export const MUTED = '#8B9AA0'; // cool gray captions
+export const PRODUCT = '#56E0C0'; // product line
+export const AMBER = '#F2C96B'; // continue prompt accent (was v0.1 cream/yellow)
 
 // Wordmark slab gradient, top → bottom (one stop per slab row).
-export const SLABS = ['#F6AD70', '#F39E6A', '#EF8E64', '#EB7E60', '#E86F5E'];
+export const SLABS = ['#A8EFE0', '#86E6D2', '#63DCBF', '#45CEAB', '#34BE9B'];
 
 // --- wordmark ----------------------------------------------------------------
 // Each letter is five slab rows of five cells; '▀' keeps each row a crisp
 // slice, gap of two cells between letters. Top rows are indented right to
-// give the logo's italic lean.
+// give the italic lean.
 const LETTERS: Record<string, string[]> = {
   A: [' ▀▀▀ ', '▀   ▀', '▀▀▀▀▀', '▀   ▀', '▀   ▀'],
   N: ['▀   ▀', '▀▀  ▀', '▀ ▀ ▀', '▀  ▀▀', '▀   ▀'],
@@ -49,8 +51,8 @@ export function lerp(a: string, b: string, t: number): string {
   return `#${[mix(ar!, br!), mix(ag!, bg!), mix(ab!, bb!)].map((n) => n.toString(16).padStart(2, '0').toUpperCase()).join('')}`;
 }
 
-/** Lowercase text with a per-character peach → coral sweep. */
+/** Lowercase text with a per-character mint → teal sweep. */
 export function sweepColors(text: string): Array<{ ch: string; color: string }> {
   const n = Math.max(1, text.length - 1);
-  return [...text].map((ch, i) => ({ ch, color: lerp(PEACH, CORAL, i / n) }));
+  return [...text].map((ch, i) => ({ ch, color: lerp(MINT, TEAL, i / n) }));
 }

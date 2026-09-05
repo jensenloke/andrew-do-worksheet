@@ -1,14 +1,26 @@
 /**
- * Boot splash in the Fan Monitor / Agentic Builders Collective style:
- * a salmon rounded box on near-black, the ANDREW slab wordmark filling top →
- * bottom in the peach → coral gradient, a dotted rust rule, the acronym
- * meaning, then a blinking continue prompt. Space/enter completes the reveal
- * on the first press and continues on the second.
+ * Boot splash: ANDREW's teal brand in a Fan Monitor-style layout — a teal
+ * rounded box on near-black, the slab wordmark filling top → bottom in the
+ * mint → teal gradient, a dotted rule, the acronym meaning, then a pulsing
+ * continue prompt. Space/enter completes the reveal on the first press and
+ * continues on the second.
  */
 
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
-import { INK, MUTED, PEACH, RUST, RULE, SALMON, SLABS, WORDMARK_ROWS, sweepColors } from './brand.js';
+import {
+  AMBER,
+  DEEP,
+  INK,
+  MUTED,
+  PRODUCT,
+  RULE,
+  RULE_COLOR,
+  SLABS,
+  TEAL,
+  WORDMARK_ROWS,
+  sweepColors,
+} from './brand.js';
 
 const MEANING = 'a narrative d&o risk evaluation worksheet';
 const REVEAL_MS = 150;
@@ -64,7 +76,7 @@ export function SplashScreen({ onContinue }: Props) {
       <Box
         flexDirection="column"
         borderStyle="round"
-        borderColor={SALMON}
+        borderColor={TEAL}
         backgroundColor={INK}
         paddingX={2}
         paddingY={1}
@@ -72,7 +84,7 @@ export function SplashScreen({ onContinue }: Props) {
         width={WORDMARK_ROWS.reduce((m, r) => Math.max(m, r.length), 0) + 6}
       >
         {WORDMARK_ROWS.map((row, i) => (
-          <Text key={i} color={step > i ? SLABS[i] : RUST}>
+          <Text key={i} color={step > i ? SLABS[i] : DEEP}>
             {row}
           </Text>
         ))}
@@ -80,7 +92,7 @@ export function SplashScreen({ onContinue }: Props) {
         <Box height={1} />
 
         {step >= WORDMARK_ROWS.length ? (
-          <Text color={RUST}>{RULE}</Text>
+          <Text color={RULE_COLOR}>{RULE}</Text>
         ) : (
           <Text color={INK}>{RULE}</Text>
         )}
@@ -98,7 +110,7 @@ export function SplashScreen({ onContinue }: Props) {
         )}
 
         <Box height={1} />
-        <Text bold color={PEACH}>
+        <Text bold color={PRODUCT}>
           D&amp;O UNDERWRITING AGENT
         </Text>
         <Box height={1} />
@@ -106,7 +118,7 @@ export function SplashScreen({ onContinue }: Props) {
 
         <Box height={1} />
         {done ? (
-          <Text bold color={PEACH} dimColor={!blink}>
+          <Text bold color={AMBER} dimColor={!blink}>
             PRESS SPACE OR ENTER TO CONTINUE
           </Text>
         ) : (
