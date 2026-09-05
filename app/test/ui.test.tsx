@@ -4,6 +4,8 @@ import { render } from 'ink-testing-library';
 import { StockSearchScreen } from '../src/ui/StockSearchScreen.js';
 import { SplashScreen } from '../src/ui/SplashScreen.js';
 import { ResultsScreen } from '../src/ui/ResultsScreen.js';
+import { StatusBar } from '../src/ui/StatusBar.js';
+import { DEFAULT_SETTINGS } from '../src/agent/settings.js';
 import { calculate } from '../src/engine/index.js';
 import { toWorksheetInput } from '../src/agent/schema.js';
 import type { Proposal } from '../src/agent/schema.js';
@@ -73,7 +75,7 @@ describe('TUI renders', () => {
   });
 
   it('renders the stock search screen with the rehearsal universe', () => {
-    const { lastFrame } = render(<StockSearchScreen onPick={() => {}} onSettings={() => {}} />);
+    const { lastFrame } = render(<StockSearchScreen onPick={() => {}} onSettings={() => {}} onQuit={() => {}} rows={30} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('Search SGX-listed stocks');
     expect(frame).toContain('Rehearsal universe (23)');
@@ -83,7 +85,7 @@ describe('TUI renders', () => {
     expect(frame).toContain('ComfortDelGro');
   });
 
-  it('renders the results screen with premium, exclusions and formula toggle hint', () => {
+  it('renders the results screen with premium, exclusions and synthesis (formulas hidden by default)', () => {
     const input = toWorksheetInput(sampleProposal);
     const output = calculate(input);
     const { lastFrame } = render(
@@ -102,9 +104,18 @@ describe('TUI renders', () => {
     expect(frame).toContain('ComfortDelGro Corporation');
     expect(frame).toContain('Premium to quote');
     expect(frame).toContain('Major shareholder exclusion');
-    expect(frame).toContain('show the formulas');
     expect(frame).toContain('clean blue-chip risk');
     expect(frame).toContain('Research time');
     expect(frame).toMatch(/CLEAR|REFER/);
+    expect(frame).not.toContain('How the premium was calculated'); // press f reveals it
+  });
+
+  it('renders the pinned status bar with global config and key hints', () => {
+    const { lastFrame } = render(<StatusBar settings={DEFAULT_SETTINGS} keys="↑↓ move · ⏎ underwrite · q quit" />);
+    const frame = lastFrame() ?? '';
+    expect(frame).toContain('config');
+    expect(frame).toContain('model');
+    expect(frame).toContain('search');
+    expect(frame).toContain('underwrite · q quit');
   });
 });

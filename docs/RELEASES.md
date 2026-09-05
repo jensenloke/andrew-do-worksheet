@@ -1,6 +1,22 @@
 # Releases
 
 
+## v0.2.1 — 2026-09-06
+
+TUI usability pass.
+
+### Changed
+
+- **Pinned bottom status bar on every screen**: a live config line (model ·
+  search backend · teams · thinking · research limit) plus the current screen's
+  key hints, drawn in the teal brand colour. Key hints are no longer scattered
+  per-screen and no longer scroll away on tall screens.
+- The whole UI is a fixed full-height frame: title on top, content in the middle
+  (long screens clipped instead of pushing the bar off-screen), status bar pinned
+  at the bottom.
+- Quit is now discoverable everywhere: `q` works on the search screen too.
+- Settings keeps only its Brave-key source note (the rest is in the status bar).
+
 ## v0.2.0 — 2026-09-06
 
 In-app search-provider configuration.

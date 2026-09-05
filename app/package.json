@@ -1,6 +1,6 @@
 {
   "name": "andrew",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "A.N.D.R.E.W — A Narrative D&O Risk Evaluation Worksheet. AI-assisted D&O underwriting for SGX-listed companies, with Anapi Insurance Brokers.",
   "type": "module",

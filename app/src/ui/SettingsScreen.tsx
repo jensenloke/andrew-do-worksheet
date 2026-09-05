@@ -6,8 +6,7 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { clampSubAgents, clampResearchLimit, SETTINGS_LIMITS, saveSettings, type AppSettings } from '../agent/settings.js';
-import { providerConfig } from '../agent/provider.js';
-import { braveKeySource, searchProvider } from '../agent/research.js';
+import { braveKeySource } from '../agent/research.js';
 
 interface Props {
   settings: AppSettings;
@@ -28,8 +27,6 @@ export function SettingsScreen({ settings, onChange, onBack }: Props) {
   const [row, setRow] = useState(0);
   const [editingKey, setEditingKey] = useState(false);
   const [keyBuf, setKeyBuf] = useState('');
-  const cfg = providerConfig();
-  const search = searchProvider();
   const source = braveKeySource();
 
   const update = (next: AppSettings) => {
@@ -83,7 +80,7 @@ export function SettingsScreen({ settings, onChange, onBack }: Props) {
       <Text bold color="cyan">
         Settings
       </Text>
-      <Text dimColor>saved automatically · enter/esc to go back</Text>
+      <Text dimColor>saved automatically</Text>
 
       <Box marginTop={1} flexDirection="column">
         <Text color={row === 0 ? 'cyan' : undefined}>
@@ -123,15 +120,11 @@ export function SettingsScreen({ settings, onChange, onBack }: Props) {
         </Text>
       </Box>
 
-      <Box marginTop={1} flexDirection="column">
-        <Text dimColor>
-          model: {cfg.modelId} · {cfg.baseURL.replace('https://', '').split('/')[0]}
-        </Text>
-        <Text dimColor>
-          search: {search === 'brave' ? 'Brave Search API' : 'DuckDuckGo (fallback — add a Brave key above)'}
-          {search === 'brave' && source === 'env' ? '  (from BRAVE_API_KEY env var)' : ''}
-        </Text>
-      </Box>
+      {source === 'env' ? (
+        <Box marginTop={1}>
+          <Text dimColor>search is using the BRAVE_API_KEY env var (overrides the field above)</Text>
+        </Box>
+      ) : null}
     </Box>
   );
 }

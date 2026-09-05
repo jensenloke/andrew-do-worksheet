@@ -1,8 +1,10 @@
 /** App state machine — one company at a time:
- * search → research (fan-out) → review/override → results. */
+ * search → research (fan-out) → review/override → results.
+ * Every screen renders inside a full-height Frame with a pinned bottom status
+ * bar (global config + the current screen's keys) so it never scrolls away. */
 
 import React, { useState } from 'react';
-import { Box, Text, useApp, useInput } from 'ink';
+import { Box, Text, useApp, useInput, useStdout } from 'ink';
 import { StockSearchScreen } from './StockSearchScreen.js';
 import { SplashScreen } from './SplashScreen.js';
 import { CommentScreen } from './CommentScreen.js';
@@ -10,6 +12,7 @@ import { ResearchScreen } from './ResearchScreen.js';
 import { ReviewScreen } from './ReviewScreen.js';
 import { ResultsScreen } from './ResultsScreen.js';
 import { SettingsScreen } from './SettingsScreen.js';
+import { StatusBar } from './StatusBar.js';
 import { calculate } from '../engine/index.js';
 import { EXCLUSIONS } from '../engine/exclusions.js';
 import { buildTeams } from '../agent/subagents.js';
@@ -28,8 +31,13 @@ interface FinalResult {
   appliedExclusionNames: string[];
 }
 
+/** Bottom status bar (2 rows) + top banner (1 row) the screen content shares. */
+const FRAME_CHROME_ROWS = 3;
+
 export function App() {
   const { exit } = useApp();
+  const { stdout } = useStdout();
+  const termRows = stdout?.rows ?? 30;
   const [phase, setPhase] = useState<Phase>('splash');
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [stock, setStock] = useState<StockRef | null>(null);
@@ -39,6 +47,18 @@ export function App() {
   const [researchDurationMs, setResearchDurationMs] = useState<number | null>(null);
   const [comments, setComments] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Error screen: n = try again, q = quit (the only phase without its own screen).
+  // Registered here, before the splash early-return, so the hook order is stable.
+  useInput(
+    (input) => {
+      if (phase !== 'error') return;
+      if (input === 'n') restart();
+      if (input === 'q') exit();
+    },
+    { isActive: phase === 'error' },
+  );
+
 
   const onPick = (picked: StockRef) => {
     setStock(picked);
@@ -100,108 +120,84 @@ export function App() {
   const quit = () => exit();
 
   if (phase === 'splash') {
-    // Draws its own full-screen frame — no banner above it.
+    // Draws its own full-screen frame — no banner or status bar above it.
     return <SplashScreen onContinue={() => setPhase('select')} />;
   }
 
+  // Per-screen key hints shown in the pinned status bar.
+  const keys =
+    phase === 'select'
+      ? '↑↓ move · pgup/pgdn scroll · ⏎ underwrite · s settings · q quit'
+      : phase === 'settings'
+        ? '←→ / space adjust · e edit Brave key · ⏎ or esc back to search'
+        : phase === 'comment'
+          ? 'type notes · ⏎ new line · ⏎⏎ or ctrl-d continue · esc skip notes'
+          : phase === 'research'
+            ? 'watching…   q abort run & return to search'
+            : phase === 'review'
+              ? '↑↓ move · ⏎ re-set value · space toggle exclusion · c calculate · q quit'
+              : phase === 'results'
+                ? 'f toggle formulas · n underwrite another · q quit'
+                : 'n try again · q quit';
+
+  let content: React.ReactNode;
   if (phase === 'select') {
-    return (
-      <Frame>
-        <StockSearchScreen onPick={onPick} onSettings={() => setPhase('settings')} />
-      </Frame>
-    );
-  }
-
-  if (phase === 'settings') {
-    return (
-      <Frame>
-        <SettingsScreen settings={settings} onChange={setSettings} onBack={() => setPhase('select')} />
-      </Frame>
-    );
-  }
-
-  if (phase === 'comment' && stock && logger) {
-    return (
-      <Frame>
-        <CommentScreen stock={stock} onSubmit={onCommentSubmit} />
-      </Frame>
-    );
-  }
-
-  if (phase === 'research' && stock && logger) {
+    content = <StockSearchScreen onPick={onPick} onSettings={() => setPhase('settings')} onQuit={quit} rows={termRows - FRAME_CHROME_ROWS} />;
+  } else if (phase === 'settings') {
+    content = <SettingsScreen settings={settings} onChange={setSettings} onBack={() => setPhase('select')} />;
+  } else if (phase === 'comment' && stock && logger) {
+    content = <CommentScreen stock={stock} onSubmit={onCommentSubmit} />;
+  } else if (phase === 'research' && stock && logger) {
     const teams = buildTeams(settings.maxSubAgents);
-    return (
-      <Frame>
-        <ResearchScreen
-          key={stock.ticker}
-          stock={stock}
-          logger={logger}
-          teams={teams.map((t) => ({ id: t.id, label: t.label }))}
-          settings={settings}
-          comments={comments}
-          onDone={onResearchDone}
-          onError={onResearchError}
-          onAbort={onAbortRun}
-        />
-      </Frame>
+    content = (
+      <ResearchScreen
+        key={stock.ticker}
+        stock={stock}
+        logger={logger}
+        teams={teams.map((t) => ({ id: t.id, label: t.label }))}
+        settings={settings}
+        comments={comments}
+        onDone={onResearchDone}
+        onError={onResearchError}
+        onAbort={onAbortRun}
+      />
     );
-  }
-
-  if (phase === 'review' && stock && proposal) {
-    return (
-      <Frame>
-        <ReviewScreen stock={stock} proposal={proposal} comments={comments} onCalculate={onCalculate} onQuit={quit} />
-      </Frame>
+  } else if (phase === 'review' && stock && proposal) {
+    content = <ReviewScreen stock={stock} proposal={proposal} comments={comments} onCalculate={onCalculate} onQuit={quit} />;
+  } else if (phase === 'results' && stock && proposal && result) {
+    content = (
+      <ResultsScreen
+        companyName={proposal.companyName || stock.name}
+        input={result.input}
+        output={result.output}
+        appliedExclusions={result.appliedExclusionNames}
+        synthesis={proposal.synthesis}
+        researchDurationMs={researchDurationMs}
+        onQuit={quit}
+        onRestart={restart}
+      />
     );
-  }
-
-  if (phase === 'results' && stock && proposal && result) {
-    return (
-      <Frame>
-        <ResultsScreen
-          companyName={proposal.companyName || stock.name}
-          input={result.input}
-          output={result.output}
-          appliedExclusions={result.appliedExclusionNames}
-          synthesis={proposal.synthesis}
-          researchDurationMs={researchDurationMs}
-          onQuit={quit}
-          onRestart={restart}
-        />
-      </Frame>
-    );
-  }
-
-  return (
-    <Frame>
+  } else {
+    content = (
       <Box flexDirection="column" paddingX={1}>
         <Text bold color="red">
           Research failed
         </Text>
         <Text>{errorMessage}</Text>
         <Text dimColor>Check the model provider config (.env: DO_AGENT_BASE_URL / DO_AGENT_MODEL / DO_AGENT_API_KEY) and network, then retry.</Text>
-        <Text dimColor>n = try again · q = quit</Text>
-        <ErrorHandler onRestart={restart} onQuit={quit} />
       </Box>
-    </Frame>
-  );
-}
+    );
+  }
 
-function ErrorHandler({ onRestart, onQuit }: { onRestart: () => void; onQuit: () => void }) {
-  useInput((input) => {
-    if (input === 'n') onRestart();
-    if (input === 'q') onQuit();
-  });
-  return null;
-}
-
-function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" width="100%" height={termRows}>
       <Box paddingX={1}>
         <Text bold inverse> A.N.D.R.E.W — A Narrative D&amp;O Risk Evaluation Worksheet </Text>
       </Box>
-      {children}
+      <Box flexGrow={1} flexDirection="column" minHeight={0} overflowY="hidden">
+        {content}
+      </Box>
+      <StatusBar settings={settings} keys={keys} />
     </Box>
   );
 }

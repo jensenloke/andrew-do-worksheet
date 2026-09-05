@@ -59,11 +59,6 @@ export function CommentScreen({ stock, onSubmit }: Props) {
         ) : null}
       </Box>
 
-      <Box marginTop={1}>
-        <Text dimColor>
-          enter = new line · backspace = delete · ctrl-d / esc = continue · empty = skip
-        </Text>
-      </Box>
     </Box>
   );
 }

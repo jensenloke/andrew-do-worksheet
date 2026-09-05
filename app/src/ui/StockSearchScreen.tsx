@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { searchSgxStocks, type StockSearchResult } from '../data/yahoo.js';
@@ -14,17 +14,18 @@ import { DEMO_UNIVERSE, type StockRef } from '../data/universe.js';
 interface Props {
   onPick: (stock: StockRef) => void;
   onSettings: () => void;
+  onQuit: () => void;
+  /** Rows available to this screen (terminal height minus frame chrome). */
+  rows: number;
 }
 
 type Item = StockRef & { hint?: string };
 
-// Terminal rows reserved for the frame title, search title, input, hint and spacing.
-const CHROME_ROWS = 9;
+// Rows reserved for the search title, input, and spacing (keys are in the status bar).
+const CHROME_ROWS = 6;
 
-export function StockSearchScreen({ onPick, onSettings }: Props) {
-  const { stdout } = useStdout();
-  const termRows = stdout?.rows ?? 30;
-  const viewport = Math.max(5, termRows - CHROME_ROWS);
+export function StockSearchScreen({ onPick, onSettings, onQuit, rows }: Props) {
+  const viewport = Math.max(5, rows - CHROME_ROWS);
 
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -80,9 +81,9 @@ export function StockSearchScreen({ onPick, onSettings }: Props) {
   }, [query]);
 
   useInput((input, key) => {
-    if (input === 's' && query.trim().length === 0) {
-      onSettings();
-      return;
+    if (query.trim().length === 0) {
+      if (input === 's') return onSettings();
+      if (input === 'q') return onQuit();
     }
     if (key.upArrow) setCursor((c) => Math.max(0, c - 1));
     if (key.downArrow) setCursor((c) => Math.min(Math.max(items.length - 1, 0), c + 1));
@@ -114,7 +115,6 @@ export function StockSearchScreen({ onPick, onSettings }: Props) {
         </Text>
         <TextInput value={query} onChange={setQuery} placeholder="type a company name or ticker…" />
       </Box>
-      <Text dimColor>↑↓ move · pgup/pgdn scroll · enter to underwrite · s = settings · one company at a time</Text>
 
       <Box marginTop={1} flexDirection="column">
         {isSearchMode ? (

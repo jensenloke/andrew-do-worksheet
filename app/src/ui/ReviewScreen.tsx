@@ -253,12 +253,6 @@ export function ReviewScreen({ stock, proposal, comments, onCalculate, onQuit }:
           {proposal.structure.hazardClass} ({proposal.structure.hazardRationale.slice(0, 60)})
         </Text>
       </Box>
-      <Box marginTop={1}>
-        <Text bold color="green">
-          c = calculate
-        </Text>
-        <Text dimColor> · q = quit</Text>
-      </Box>
     </Box>
   );
 }

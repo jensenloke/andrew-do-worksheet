@@ -50,8 +50,13 @@ Settings (`s` on the search screen, persisted to `settings.json`):
   coverage stays complete.
 - **Thinking** — Qwen reasoning mode for researchers and synthesis (default
   off: faster and cheaper; on: deeper reasoning, more tokens).
+- **Hard research limit** — per-researcher wall-time cap (60–1800s, default 900).
+- **Search · Brave API key** — press `e`, paste a Brave Search key (masked, saved
+  to `settings.json`). With one, web search uses the Brave API; without, it falls
+  back to free DuckDuckGo (rate-limited, can be IP-blocked).
 
-The teams run in parallel (the team count is the concurrency control) and
+A status bar is pinned to the bottom of every screen (live config + the current
+screen's keys). The teams run in parallel (the team count is the concurrency control) and
 share the PDF cache — the annual report is downloaded once. Leveling
 assumptions (no claims, new policy, headcount 200) are enforced in code after
 synthesis, not left to the model.

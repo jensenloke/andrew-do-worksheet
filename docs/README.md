@@ -63,8 +63,13 @@ proposal + engine output), `events.jsonl` (raw), `proposal.json`, `worksheet.jso
 
 ## Keyboard
 
+A status bar is **pinned to the bottom of every screen**: the top line shows the
+live config (model · search · teams · thinking · limit), the bottom line shows the
+keys for the current screen.
+
 - Splash: `space`/`enter` to continue
-- Search: `↑↓` move, `pgup/pgdn` scroll, `enter` underwrite, `s` settings
+- Search: `↑↓` move, `pgup/pgdn` scroll, `enter` underwrite, `s` settings, `q` quit
+- Notes: type freely, `enter` new line, `ctrl-d` / double `enter` continue, `esc` skip
 - Research: `q`/`Esc` abort
-- Review: adjust modifiers / toggle exclusions, `c` calculate
+- Review: `↑↓` move, `enter` re-set a modifier, `space` toggle exclusion, `c` calculate, `q` quit
 - Results: `f` formula waterfall, `n` new company, `q` quit

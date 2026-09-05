@@ -129,13 +129,6 @@ export function ResearchScreen({ stock, logger, teams, settings, comments, onDon
         <Text color={elapsed > 360 ? 'yellow' : undefined}> ⏱ {formatDuration(elapsed * 1000)}</Text>
       </Box>
 
-      <Box>
-        <Text dimColor>
-          config: {teams.length} team{teams.length === 1 ? '' : 's'} · thinking {settings.thinking ? 'on' : 'off'} ·
-          hard limit {settings.researchLimitSec}s · model {providerConfig().modelId} · search{' '}
-          {searchProvider() === 'brave' ? 'Brave' : 'DuckDuckGo'}
-        </Text>
-      </Box>
 
       <Box marginTop={1} flexDirection="column">
         {teams.map((spec) => {
@@ -190,14 +183,13 @@ export function ResearchScreen({ stock, logger, teams, settings, comments, onDon
         })}
       </Box>
 
-      <Box marginTop={1}>
-        {busy ? (
+      {busy ? (
+        <Box marginTop={1}>
           <Text color="cyan">
             <Spinner type="dots" /> agents working — reading public sources…
           </Text>
-        ) : null}
-        <Text dimColor> · q = abort run</Text>
-      </Box>
+        </Box>
+      ) : null}
     </Box>
   );
 }

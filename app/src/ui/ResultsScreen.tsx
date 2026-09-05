@@ -107,11 +107,7 @@ export function ResultsScreen({ companyName, input, output, appliedExclusions, s
             </Text>
           ))}
         </Box>
-      ) : (
-        <Box marginTop={1}>
-          <Text dimColor>f = show the formulas used</Text>
-        </Box>
-      )}
+      ) : null}
 
       <Box marginTop={1} flexDirection="column">
         <Text bold underline>
@@ -120,9 +116,6 @@ export function ResultsScreen({ companyName, input, output, appliedExclusions, s
         <Text wrap="wrap">{synthesis}</Text>
       </Box>
 
-      <Box marginTop={1}>
-        <Text dimColor>n = underwrite another company · q = quit</Text>
-      </Box>
     </Box>
   );
 }
