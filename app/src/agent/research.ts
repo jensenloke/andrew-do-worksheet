@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import * as cheerio from 'cheerio';
 import TurndownService from 'turndown';
 import { extractText, getDocumentProxy } from 'unpdf';
+import { loadDotEnv } from '../env.js';
 
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 prompt-fight-do-agent';
@@ -159,9 +160,21 @@ export interface WebResult {
   snippet: string;
 }
 
-/** Search the web via DuckDuckGo (no API key). Primary: html endpoint (POST);
- * falls back to the lite endpoint when the primary is blocked or empty. */
+/**
+ * Search the web. Uses the Brave Search API when BRAVE_API_KEY is set (official,
+ * quota-backed, no bot-blocking — a Brave success is authoritative, including an
+ * empty result set). Falls back to DuckDuckGo scraping (html, then lite) when no
+ * key is configured or Brave errors out (quota / network). DuckDuckGo needs no
+ * key but is rate/CAPTCHA-limited and can be IP-blocked.
+ */
 export async function searchWeb(query: string): Promise<WebResult[]> {
+  if (braveApiKey()) {
+    try {
+      return await searchBrave(query);
+    } catch {
+      // Brave errored (quota / network) — fall through to DuckDuckGo.
+    }
+  }
   try {
     const results = await searchDdgHtml(query);
     if (results.length > 0) return results;
@@ -169,6 +182,34 @@ export async function searchWeb(query: string): Promise<WebResult[]> {
     // fall through to lite
   }
   return searchDdgLite(query);
+}
+
+const BRAVE_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
+
+function braveApiKey(): string | undefined {
+  loadDotEnv();
+  const k = process.env.BRAVE_API_KEY?.trim();
+  return k ? k : undefined;
+}
+/** Brave Search API. Resolves (possibly empty) on success; throws on any error
+ * so the caller can fall back. Empty means Brave genuinely has no hits. */
+async function searchBrave(query: string): Promise<WebResult[]> {
+  const key = braveApiKey();
+  if (!key) throw new Error('BRAVE_API_KEY not set');
+  const params = new URLSearchParams({ q: query, count: '10' });
+  const res = await fetch(`${BRAVE_ENDPOINT}?${params}`, {
+    headers: { Accept: 'application/json', 'X-Subscription-Token': key },
+    redirect: 'follow',
+  });
+  if (!res.ok) throw new Error(`Brave search failed: HTTP ${res.status}`);
+  const json = (await res.json()) as {
+    web?: { results?: Array<{ title?: string; url?: string; description?: string }> };
+  };
+  const results: WebResult[] = [];
+  for (const r of json.web?.results ?? []) {
+    if (r.url && r.title) results.push({ title: r.title, url: r.url, snippet: r.description ?? '' });
+  }
+  return results.slice(0, 10);
 }
 
 async function searchDdgHtml(query: string): Promise<WebResult[]> {

@@ -27,6 +27,11 @@ small / open models (observed on a local DGX vLLM endpoint).
 
 ### Changed
 
+- Web search now prefers the **Brave Search API** when `BRAVE_API_KEY` is set
+  (official, quota-backed, no bot/CAPTCHA/IP blocking — and an empty Brave
+  result is authoritative, unlike a silent DDG block). Falls back to the
+  existing DuckDuckGo scraping (html → lite) when no key is set or Brave errors,
+  so the app still runs keyless.
 - Splash rebuilt in a Fan Monitor-style layout using ANDREW's own teal palette:
   teal rounded frame on near-black, A.N.D.R.E.W slab wordmark filling
   top-to-bottom in a mint → teal gradient, dotted rule, lowercase sweep

@@ -3,7 +3,7 @@
  *  - fetch_market_data : Yahoo Finance for SGX tickers (Q1 market cap, Q3 price move)
  *  - fetch_page        : read a web page as markdown (IR pages, SGX, news)
  *  - read_pdf          : read an annual report / announcement PDF (search or page range)
- *  - search_web        : DuckDuckGo search to locate reports and adverse news
+ *  - search_web        : Brave (or DuckDuckGo) search to locate reports and adverse news
  *  - submit_proposal   : the final, fully-cited worksheet proposal (call exactly once)
  */
 
@@ -56,7 +56,7 @@ export function researchTools() {
 
     searchWeb: tool({
       description:
-        'Search the web (DuckDuckGo). Use to locate the latest annual report PDF, the investor-relations page, SGX announcements, and any adverse news (profit warnings, investigations, lawsuits) over the last 3–5 years.',
+        'Search the web (Brave Search API when configured, else DuckDuckGo). Use to locate the latest annual report PDF, the investor-relations page, SGX announcements, and any adverse news (profit warnings, investigations, lawsuits) over the last 3–5 years.',
       inputSchema: z.object({
         query: z.string().describe('Search query'),
       }),

@@ -35,6 +35,10 @@ DO_AGENT_API_KEY=sk-...
 # DashScope:    https://dashscope-intl.aliyuncs.com/compatible-mode/v1
 # Local Ollama: http://localhost:11434/v1               (key can be anything)
 # Local vLLM:   http://localhost:8000/v1
+
+# Web search (optional): with a Brave key ANDREW uses the Brave Search API
+# (no bot/CAPTCHA/IP blocking); without one it falls back to DuckDuckGo.
+BRAVE_API_KEY=***
 ```
 
 `npm run check-model` verifies connectivity. Thinking/reasoning models are supported;

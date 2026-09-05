@@ -76,7 +76,7 @@ src/
 │               universe.ts — rehearsal stocks across hazard classes 1–4
 ├── agent/      research.ts   — fetchPage (HTML→markdown), readPdf (keyword
 │                              search / page ranges, disk cache), searchWeb
-│                              (DuckDuckGo with lite fallback)
+│                              (Brave API if BRAVE_API_KEY set, else DuckDuckGo)
 │               subagents.ts  — the five specialist researchers + preparation
 │               agent.ts      — fan-out orchestration + synthesizer
 │               schema.ts     — Zod proposal schema (value+rationale+source

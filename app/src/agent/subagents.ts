@@ -237,7 +237,7 @@ function subAgentTools() {
         readPdf(url, search !== undefined ? { search } : pages !== undefined ? { pages } : {}),
     }),
     searchWeb: tool({
-      description: 'Search the web (DuckDuckGo).',
+      description: 'Search the web (Brave, falling back to DuckDuckGo).',
       inputSchema: z.object({ query: z.string() }),
       execute: async ({ query }) => {
         const results = await searchWeb(query);
