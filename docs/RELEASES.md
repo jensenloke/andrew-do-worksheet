@@ -25,6 +25,14 @@ small / open models (observed on a local DGX vLLM endpoint).
 - Error screen points at the real provider config (`DO_AGENT_*`) instead of the
   legacy `DASHSCOPE_API_KEY`.
 
+### Changed
+
+- Splash rebuilt in the Fan Monitor / Agentic Builders Collective style:
+  salmon rounded frame on near-black, A.N.D.R.E.W slab wordmark filling
+  top-to-bottom in the peach → coral gradient, dotted rule, lowercase
+  sweep tagline, animated status dots. The `andrew` shell command launches
+  tsx directly — no more `npm run dev` banner above the splash.
+
 ## v0.1.0 — 2026-09-05
 
 First public build, prepared for the PLUS on-stage session.

@@ -100,11 +100,8 @@ export function App() {
   const quit = () => exit();
 
   if (phase === 'splash') {
-    return (
-      <Frame>
-        <SplashScreen onContinue={() => setPhase('select')} />
-      </Frame>
-    );
+    // Draws its own full-screen frame — no banner above it.
+    return <SplashScreen onContinue={() => setPhase('select')} />;
   }
 
   if (phase === 'select') {
