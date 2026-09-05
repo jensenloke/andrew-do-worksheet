@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLUS D&amp;O Agent — Discussion Topics</title>
+<style>
+  :root {
+    --ink: #10233a;
+    --ink-soft: #3d5168;
+    --line: #dde4ec;
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --accent: #0f6f74;
+    --accent-soft: #e3f2f2;
+    --rec: #0c6b3f;
+    --rec-bg: #e8f5ec;
+    --warn: #9a5b00;
+    --warn-bg: #fdf3e3;
+    --open: #9a5b00;
+    --decided: #0c6b3f;
+    --deferred: #6b7686;
+    --radius: 14px;
+    --shadow: 0 1px 3px rgba(16,35,58,.06), 0 8px 24px rgba(16,35,58,.05);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  header.masthead {
+    background: linear-gradient(135deg, #0f2a3d 0%, #12494f 100%);
+    color: #fff;
+    padding: 40px 20px 34px;
+  }
+  header.masthead .inner { max-width: 920px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: #8fd0d3; font-weight: 700; margin: 0 0 8px;
+  }
+  h1 { margin: 0 0 8px; font-size: 30px; line-height: 1.15; }
+  .sub { margin: 0; color: #c3d6dc; font-size: 15px; max-width: 62ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .meta span {
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+    padding: 4px 12px; border-radius: 999px; font-size: 12.5px; color: #eaf3f4;
+  }
+
+  h2.section {
+    font-size: 13px; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--ink-soft); margin: 34px 0 14px; font-weight: 700;
+  }
+
+  .strip {
+    background: var(--accent-soft); border: 1px solid #bfe0e0;
+    border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .strip .strip-title { font-weight: 700; color: var(--accent); font-size: 13px; margin-bottom: 6px; }
+  .strip ol { margin: 0; padding-left: 20px; }
+  .strip li { font-size: 14px; color: var(--ink); margin: 3px 0; }
+  .strip li b { color: var(--accent); }
+
+  .topic {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden;
+  }
+  .topic-head { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px 6px; }
+  .num {
+    flex: 0 0 auto; width: 30px; height: 30px; border-radius: 8px;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
+  .topic h3 { margin: 0 0 4px; font-size: 18px; line-height: 1.25; }
+  .topic .q { margin: 0; color: var(--ink-soft); font-size: 14.5px; }
+
+  .status {
+    margin-left: auto; flex: 0 0 auto; cursor: pointer; user-select: none;
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px;
+    border: 1.5px solid; white-space: nowrap; transition: all .12s ease;
+  }
+  .status[data-status="open"]     { color: var(--open); border-color: var(--open); background: var(--warn-bg); }
+  .status[data-status="decided"]  { color: var(--decided); border-color: var(--decided); background: var(--rec-bg); }
+  .status[data-status="deferred"] { color: var(--deferred); border-color: var(--deferred); background: #eef1f4; }
+
+  .topic-body { padding: 8px 20px 16px; }
+  .rec {
+    background: var(--rec-bg); border-left: 3px solid var(--rec);
+    border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 10px 0; font-size: 14px;
+  }
+  .rec b { color: var(--rec); }
+  .trade { font-size: 14px; color: var(--ink-soft); }
+  .trade summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13.5px; margin-bottom: 6px; }
+  .trade ul { margin: 6px 0 2px; padding-left: 20px; }
+  .trade li { margin: 4px 0; }
+
+  .note-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 6px; }
+  .note {
+    border: 1px dashed #c4ccd6; border-radius: 10px; min-height: 44px;
+    padding: 10px 12px; font-size: 14px; color: var(--ink); outline: none;
+  }
+  .note:focus { border-color: var(--accent); background: #fbfdfd; }
+  .note:empty::before { content: attr(data-ph); color: #a7b2c0; }
+
+  details.ref { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; }
+  details.ref summary { cursor: pointer; padding: 16px 20px; font-weight: 700; font-size: 15px; color: var(--ink); }
+  details.ref[open] summary { border-bottom: 1px solid var(--line); }
+  details.ref .ref-body { padding: 14px 20px 18px; font-size: 14px; color: var(--ink-soft); }
+  details.ref table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 13.5px; }
+  details.ref th, details.ref td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  details.ref th { background: var(--accent-soft); color: var(--ink); }
+
+  .toolbar {
+    position: sticky; bottom: 16px; display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 26px;
+  }
+  .btn {
+    border: none; cursor: pointer; font-weight: 700; font-size: 14px;
+    padding: 12px 20px; border-radius: 10px; color: #fff; background: var(--accent);
+    box-shadow: 0 6px 18px rgba(15,111,116,.35); transition: transform .08s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.ghost { background: #fff; color: var(--ink-soft); border: 1px solid var(--line); box-shadow: var(--shadow); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 999px;
+    font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+  }
+  .toast.show { opacity: 1; }
+
+  footer { margin-top: 30px; text-align: center; color: #9aa7b6; font-size: 12.5px; }
+  @media (max-width: 560px) { h1 { font-size: 24px; } .topic-head { flex-wrap: wrap; } .status { margin-left: 0; } }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="inner">
+    <p class="eyebrow">Prep for the on-stage session</p>
+    <h1>D&amp;O Underwriting Agent — Discussion Topics</h1>
+    <p class="sub">Working agenda for the prompt-fight meetup: the decisions to lock down, the recommendations on the table, and where to capture what we agree.</p>
+    <div class="meta">
+      <span>Event · PLUS (SG liability insurers)</span>
+      <span>Session · 1 hour total</span>
+      <span>Format · 3 competing agents</span>
+      <span>Host · organizer (TBC)</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="strip">
+    <div class="strip-title">Fixed leveling assumptions — bake into every agent (from the organizer)</div>
+    <ol>
+      <li><b>No claims</b> — Q17 = 0, Q18 = No, Q19 = No. No loss run.</li>
+      <li><b>New policy, no current coverage</b> — Q20 (expiring premium) = 0; rate change not meaningful.</li>
+      <li><b>Employee headcount = 200</b> — regardless of the real figure.</li>
+      <li><b>Everything else from the insured's website</b> — public FS, share price, shareholding, board, SGX announcements.</li>
+    </ol>
+  </div>
+
+  <h2 class="section">Decisions to make</h2>
+
+  <!-- 1 -->
+  <div class="topic" data-topic="scope">
+    <div class="topic-head">
+      <div class="num">1</div>
+      <div>
+        <h3>Agent scope on stage</h3>
+        <p class="q">Full end-to-end underwriting, or agent does research/data-entry while humans make the judgement calls live?</p>
+      </div>
+      <div class="status" data-status="open" tabindex="0" role="button" aria-label="Toggle status">Open</div>
+    </div>
+    <div class="topic-body">
+      <div class="rec"><b>Recommendation:</b> Full end-to-end, framed as <b>&ldquo;the agent underwrites, the human governs.&rdquo;</b> The agent produces the complete worksheet (narrative → 20 answers → modifiers with cited facts → exclusions → premium → referral status), then Jensen spends 2&ndash;3 minutes in visible adversarial review — checking the cited facts, pushing back where it got something subtly wrong.</div>
+      <details class="trade">
+        <summary>Why this over the alternatives</summary>
+        <ul>
+          <li>Doing judgement by hand on stage spends half your ~12&ndash;15 minutes operating a spreadsheet — what the audience already does.</li>
+          <li>&ldquo;AI as research assistant&rdquo; is the story insurers already believe; the organizer wants a different perspective.</li>
+          <li>In a three-way prompt fight, augmentation is the least ambitious entry.</li>
+          <li>Pure unattended automation risks one visibly wrong judgement call sinking credibility — so make the human review an explicit governance step, not a crutch.</li>
+        </ul>
+      </details>
+      <div class="note-label">Decision / notes</div>
+      <div class="note" contenteditable="true" data-key="scope" data-ph="Click to record the decision&hellip;"></div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="topic" data-topic="clients">
+    <div class="topic-head">
+      <div class="num">2</div>
+      <div>
+        <h3>One client or three?</h3>
+        <p class="q">Do all three agents run on the same insurer-picked client, or does each presenter get their own?</p>
+      </div>
+      <div class="status" data-status="open" tabindex="0" role="button" aria-label="Toggle status">Open</div>
+    </div>
+    <div class="topic-body">
+      <div class="rec"><b>Recommendation:</b> Same client for all three. It makes the head-to-head comparison clean and is the honest &ldquo;prompt fight.&rdquo; Needs confirmation from the organizer.</div>
+      <div class="note-label">Decision / notes</div>
+      <div class="note" contenteditable="true" data-key="clients" data-ph="Click to record the decision&hellip;"></div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="topic" data-topic="shortlist">
+    <div class="topic-head">
+      <div class="num">3</div>
+      <div>
+        <h3>Rehearsal client shortlist</h3>
+        <p class="q">Which real SGX-listed companies to rehearse on? Need coverage across hazard classes 1&ndash;4.</p>
+      </div>
+      <div class="status" data-status="open" tabindex="0" role="button" aria-label="Toggle status">Open</div>
+    </div>
+    <div class="topic-body">
+      <div class="rec"><b>Recommendation:</b> ComfortDelGro (C52, Class 2 baseline) · City Developments or UOL (Class 3) · Seatrium (5E2, Class 4 stress — 2024 CAD investigation exercises Q14/referral) · CapitaLand Integrated Commercial Trust (C38U, Class 1). Plus the Marina Logistics worked example as the deterministic smoke test.</div>
+      <details class="trade">
+        <summary>What each tests</summary>
+        <ul>
+          <li><b>Class 1 (REIT)</b> — the low-drama floor; cheap premium, minimal referrals.</li>
+          <li><b>Class 2 (transport)</b> — a calm, large-ish cap baseline.</li>
+          <li><b>Class 3 (property)</b> — cyclical, estimate-heavy accounting; tests hazard classification.</li>
+          <li><b>Class 4 (offshore/marine)</b> — adverse history + regulatory trigger; tests how the agent handles a live investigation and whether it refers.</li>
+        </ul>
+      </details>
+      <div class="note-label">Decision / notes</div>
+      <div class="note" contenteditable="true" data-key="shortlist" data-ph="Click to record the decision&hellip;"></div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="topic" data-topic="delivery">
+    <div class="topic-head">
+      <div class="num">4</div>
+      <div>
+        <h3>Worksheet delivery format on the day</h3>
+        <p class="q">Does the insurer pick a real SGX company (agent researches it live), or hand over a completed proposal form?</p>
+      </div>
+      <div class="status" data-status="open" tabindex="0" role="button" aria-label="Toggle status">Open</div>
+    </div>
+    <div class="topic-body">
+      <div class="rec"><b>Recommendation:</b> Email says insurers &ldquo;pick a client on the spot&rdquo; — likely live research from public sources. Confirm with organizer; if a proposal form is handed over instead, the research step shrinks and the demo shifts toward judgement.</div>
+      <div class="note-label">Decision / notes</div>
+      <div class="note" contenteditable="true" data-key="delivery" data-ph="Click to record the decision&hellip;"></div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="topic" data-topic="time">
+    <div class="topic-head">
+      <div class="num">5</div>
+      <div>
+        <h3>Time budget</h3>
+        <p class="q">One hour shared across host + 3 presenters + Q&amp;A. How do we split it, and how fast must the agent run?</p>
+      </div>
+      <div class="status" data-status="open" tabindex="0" role="button" aria-label="Toggle status">Open</div>
+    </div>
+    <div class="topic-body">
+      <div class="rec"><b>Recommendation:</b> ~12&ndash;15 min per presenter: ~1 min framing → <b>5&ndash;6 min agent run</b> → ~3 min output walkthrough → ~3 min design + risks/issues/costs. So the agent must finish a full run in under 6 minutes — parallel research fetches and pre-baked factor tables.</div>
+      <div class="note-label">Decision / notes</div>
+      <div class="note" contenteditable="true" data-key="time" data-ph="Click to record the decision&hellip;"></div>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="topic" data-topic="who">
+    <div class="topic-head">
+      <div class="num">6</div>
+      <div>
+        <h3>Who is who</h3>
+        <p class="q">The other two presenters — names, firms, and running order.</p>
+      </div>
+      <div class="status" data-status="open" tabindex="0" role="button" aria-label="Toggle status">Open</div>
+    </div>
+    <div class="topic-body">
+      <div class="rec"><b>Recommendation:</b> Capture names/firms and agree running order at the meetup. Jensen confirmed as one of the three competitors.</div>
+      <div class="note-label">Decision / notes</div>
+      <div class="note" contenteditable="true" data-key="who" data-ph="Click to record names and order&hellip;"></div>
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <div class="topic" data-topic="risks">
+    <div class="topic-head">
+      <div class="num">7</div>
+      <div>
+        <h3>Risks, issues &amp; costs to present</h3>
+        <p class="q">The organizer asked each presenter for high-level thoughts on risks, issues and costs. What do we say?</p>
+      </div>
+      <div class="status" data-status="open" tabindex="0" role="button" aria-label="Toggle status">Open</div>
+    </div>
+    <div class="topic-body">
+      <div class="rec"><b>Recommendation:</b> Lead with hallucination control (source citations + the deterministic referral net), data availability (fail loudly, never guess), and cost (research calls + model spend per run + the human review the referral check still requires).</div>
+      <div class="note-label">Decision / notes</div>
+      <div class="note" contenteditable="true" data-key="risks" data-ph="Click to record talking points&hellip;"></div>
+    </div>
+  </div>
+
+  <h2 class="section">Reference (context, not for debate)</h2>
+
+  <details class="ref">
+    <summary>The worked example — calibration target</summary>
+    <div class="ref-body">
+      Fictional <b>Marina Logistics Holdings Ltd</b> (SGX M42, Mainboard, ports &amp; logistics). S$680m market cap → base loss cost S$25,000 (Table A band 500&ndash;1,000) → composite modifier 1.33 → coverage-terms factor 0.88.
+      <table>
+        <tr><th>Output</th><th>Value</th></tr>
+        <tr><td>Technical premium</td><td>S$52,805</td></tr>
+        <tr><td>Premium per S$1m</td><td>S$5,281</td></tr>
+        <tr><td>Referral status</td><td>Clear to quote</td></tr>
+      </table>
+      The agent&rsquo;s output on this example must land on these same numbers — all inputs are already given.
+    </div>
+  </details>
+
+  <details class="ref">
+    <summary>Worksheet structure — what the agent must produce</summary>
+    <div class="ref-body">
+      Fill yellow cells only; grey is calculated.
+      <table>
+        <tr><th>Section</th><th>What it is</th></tr>
+        <tr><td>Risk Narrative</td><td>Company overview, adverse info + litigation call, 3-year financials + strength call, governance table + management/governance calls. Done first.</td></tr>
+        <tr><td>Part 1</td><td>20 questions (size, financials, governance/audit, regulatory, claims history, expiring). Each feeds a modifier or referral.</td></tr>
+        <tr><td>Part 2</td><td>Structure — limit (Table B), retention (Table C), hazard class (Table D).</td></tr>
+        <tr><td>Part 3</td><td>Five modifiers, start at 1.00, each citing a Part 1 fact. Composite 0.50&ndash;3.50, referral band 0.70&ndash;2.00.</td></tr>
+        <tr><td>Part 4</td><td>Sublimits + risk-specific exclusions keyed to Q answers. Never apply an exclusion to hit a price.</td></tr>
+        <tr><td>Part 5</td><td>Price — loss cost ÷ 55% permissible loss ratio × market adjustment × participation.</td></tr>
+        <tr><td>Part 6</td><td>~40 automatic referral triggers → &ldquo;clear to quote&rdquo; or REFER to a named person.</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="ref">
+    <summary>Agent build split — deterministic vs LLM</summary>
+    <div class="ref-body">
+      <table>
+        <tr><th>In code (deterministic)</th><th>LLM (with citations)</th></tr>
+        <tr>
+          <td>Factor-table lookups, modifier multiplication, coverage-terms factor, premium math, referral-trigger evaluation. The sheet already does all of this.</td>
+          <td>Public research (SGXNet, IR page, annual report, share price), drafting narrative with sources + dates, proposing each modifier with the Part 1 fact that justifies it, recommending exclusions, writing the &ldquo;why this premium&rdquo; summary.</td>
+        </tr>
+      </table>
+      Output contract: every value maps 1:1 to a named yellow cell so it can be pasted into the sheet and Part 6 can arbitrate. Percentages entered in percent form (−18%, not −0.18).
+    </div>
+  </details>
+
+  <div class="toolbar">
+    <button class="btn ghost" id="resetBtn">Reset notes</button>
+    <button class="btn" id="copyBtn">Copy meeting summary</button>
+  </div>
+
+  <footer>Prompt Fight · D&amp;O underwriting agent · working discussion board</footer>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard</div>
+
+<script>
+  const TOPICS = [
+    { key: "scope",     title: "Agent scope on stage" },
+    { key: "clients",   title: "One client or three" },
+    { key: "shortlist", title: "Rehearsal client shortlist" },
+    { key: "delivery",  title: "Worksheet delivery format on the day" },
+    { key: "time",      title: "Time budget" },
+    { key: "who",       title: "Who is who" },
+    { key: "risks",     title: "Risks, issues & costs to present" }
+  ];
+  const STORE = "pf-discussion-v1";
+  const STATES = ["open", "decided", "deferred"];
+  const LABEL = { open: "Open", decided: "Decided", deferred: "Deferred" };
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; }
+  }
+  function save(data) { localStorage.setItem(STORE, JSON.stringify(data)); }
+
+  const data = load();
+
+  // restore notes + statuses
+  document.querySelectorAll(".note").forEach(el => {
+    const k = el.dataset.key;
+    if (data[k] && data[k].note) el.textContent = data[k].note;
+    el.addEventListener("input", () => {
+      const d = load(); d[k] = d[k] || {}; d[k].note = el.textContent; save(d);
+    });
+  });
+  document.querySelectorAll(".status").forEach(el => {
+    const card = el.closest(".topic"); const k = card.dataset.topic;
+    if (data[k] && data[k].status) { el.dataset.status = data[k].status; el.textContent = LABEL[data[k].status]; }
+    const cycle = () => {
+      const next = STATES[(STATES.indexOf(el.dataset.status) + 1) % STATES.length];
+      el.dataset.status = next; el.textContent = LABEL[next];
+      const d = load(); d[k] = d[k] || {}; d[k].status = next; save(d);
+    };
+    el.addEventListener("click", cycle);
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycle(); } });
+  });
+
+  // copy summary
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    const d = load();
+    let lines = ["PLUS D&O AGENT — MEETING SUMMARY", "=" .repeat(34), ""];
+    TOPICS.forEach((t, i) => {
+      const entry = d[t.key] || {};
+      const status = LABEL[entry.status || "open"];
+      lines.push(`${i + 1}. ${t.title} — [${status}]`);
+      const note = (entry.note || "").trim();
+      lines.push(note ? `   Decision: ${note}` : "   Decision: (not recorded)");
+      lines.push("");
+    });
+    const text = lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Copied to clipboard");
+    } catch {
+      window.prompt("Copy the summary:", text);
+    }
+  });
+
+  // reset
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    if (!confirm("Clear all recorded notes and statuses?")) return;
+    localStorage.removeItem(STORE);
+    document.querySelectorAll(".note").forEach(el => el.textContent = "");
+    document.querySelectorAll(".status").forEach(el => { el.dataset.status = "open"; el.textContent = "Open"; });
+    showToast("Notes reset");
+  });
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 1800);
+  }
+</script>
+</body>
+</html>

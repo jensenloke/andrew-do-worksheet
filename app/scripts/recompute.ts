@@ -1,0 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { toWorksheetInput, type Proposal } from '../src/agent/schema.js';
+import { calculate } from '../src/engine/index.js';
+const dir = process.argv[2];
+const p = JSON.parse(readFileSync(`${dir}/proposal.json`, 'utf8')) as Proposal;
+const input = toWorksheetInput(p);
+const out = calculate(input);
+console.log('q15 normalised to:', JSON.stringify(input.risk.q15UsSecurities));
+console.log('premium to quote: S$' + Math.round(out.price.premiumToQuote).toLocaleString('en-SG'));
+console.log('per S$1m: S$' + Math.round(out.price.premiumPerMillion).toLocaleString('en-SG'));
+console.log('status:', out.referral.kind, '—', out.referral.message);
+for (const f of out.referral.fired) console.log('  [' + f.cell + ']', f.trigger.slice(0, 80), '→', f.referTo);

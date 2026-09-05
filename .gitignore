@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# runtime artifacts
+app/.cache/
+app/runs/
+
+# local config / secrets — never commit
+app/.env
+app/settings.json
+.env
+*.local
+
+# os / editor
+.DS_Store
+*.log

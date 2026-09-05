@@ -1,0 +1,40 @@
+{
+  "name": "andrew",
+  "version": "0.1.1",
+  "private": true,
+  "description": "A.N.D.R.E.W — A Narrative D&O Risk Evaluation Worksheet. AI-assisted D&O underwriting for SGX-listed companies, with Anapi Insurance Brokers.",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.tsx",
+    "check-model": "tsx scripts/smoke-model.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^19.2.18",
+    "@types/turndown": "^5.0.6",
+    "ink-testing-library": "^4.0.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.74",
+    "ai": "^6.0.275",
+    "cheerio": "^1.2.0",
+    "ink": "^6.8.0",
+    "ink-select-input": "^6.2.0",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.8",
+    "turndown": "^7.2.4",
+    "undici": "^7.29.0",
+    "unpdf": "^1.7.0",
+    "zod": "^4.5.4"
+  }
+}
