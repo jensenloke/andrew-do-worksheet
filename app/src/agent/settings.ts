@@ -14,6 +14,9 @@ export interface AppSettings {
   thinking: boolean;
   /** Hard cap on each researcher's wall time, in seconds. Default 900 (15 min). */
   researchLimitSec: number;
+  /** Brave Search API key, entered in the settings screen. Empty falls back to
+   * the BRAVE_API_KEY env var; both empty means web search uses DuckDuckGo. */
+  braveApiKey: string;
 }
 
 export const SETTINGS_LIMITS = {
@@ -27,6 +30,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxSubAgents: 2,
   thinking: false,
   researchLimitSec: 900,
+  braveApiKey: '',
 };
 
 const settingsPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'settings.json');
@@ -45,6 +49,7 @@ export function loadSettings(): AppSettings {
       researchLimitSec: clampResearchLimit(
         typeof raw.researchLimitSec === 'number' ? raw.researchLimitSec : DEFAULT_SETTINGS.researchLimitSec,
       ),
+      braveApiKey: typeof raw.braveApiKey === 'string' ? raw.braveApiKey : DEFAULT_SETTINGS.braveApiKey,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

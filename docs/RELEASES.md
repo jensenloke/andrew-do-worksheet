@@ -1,6 +1,24 @@
 # Releases
 
 
+## v0.2.0 — 2026-09-06
+
+In-app search-provider configuration.
+
+### Added
+
+- **Search · Brave API key** row in the settings screen (press `e` to edit, type
+  the key — shown masked, `enter` saves, `esc` cancels). Persisted to
+  `app/settings.json` (gitignored), so users add their own Brave key without
+  touching `.env`.
+- Resolution order: in-app key → `BRAVE_API_KEY` env var → DuckDuckGo (keyless
+  fallback). The active backend is shown on both the settings screen ("search:
+  Brave Search API") and the research screen config line, with the key source
+  when it comes from the env var.
+- Only Brave is supported as a search provider for now; DuckDuckGo remains the
+  automatic no-key fallback (free, but rate/CAPTCHA-limited and can be IP-blocked,
+  where an empty result is not trustworthy).
+
 ## v0.1.1 — 2026-09-05
 
 Reliability pass: fixes the "all research sub-agents failed" run failure on

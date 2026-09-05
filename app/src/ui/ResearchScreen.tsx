@@ -9,6 +9,7 @@ import type { Proposal } from '../agent/schema.js';
 import { formatDuration, type RunLogger } from '../agent/logger.js';
 import type { AppSettings } from '../agent/settings.js';
 import { providerConfig } from '../agent/provider.js';
+import { searchProvider } from '../agent/research.js';
 import type { StockRef } from '../data/universe.js';
 
 interface LogLine {
@@ -131,7 +132,8 @@ export function ResearchScreen({ stock, logger, teams, settings, comments, onDon
       <Box>
         <Text dimColor>
           config: {teams.length} team{teams.length === 1 ? '' : 's'} · thinking {settings.thinking ? 'on' : 'off'} ·
-          hard limit {settings.researchLimitSec}s · model {providerConfig().modelId}
+          hard limit {settings.researchLimitSec}s · model {providerConfig().modelId} · search{' '}
+          {searchProvider() === 'brave' ? 'Brave' : 'DuckDuckGo'}
         </Text>
       </Box>
 

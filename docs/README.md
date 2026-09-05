@@ -51,8 +51,10 @@ if a model burns its budget on reasoning, set `thinking` off in the settings scr
 | Sub-agents | researcher teams (1–5); briefs merge so coverage stays complete | 2 |
 | Thinking | Qwen-style reasoning on/off | off |
 | Hard research limit | per-researcher wall-time cap; shown on the research screen | 900s |
+| Search · Brave API key | paste a Brave Search key (`press e`); with one, web search uses the Brave API — no bot/CAPTCHA/IP blocking, and an empty result is trustworthy. None = free DuckDuckGo (rate-limited, can be IP-blocked) | none |
 
-The active config (teams · thinking · hard limit · model) is displayed on the research screen.
+The active config (teams · thinking · hard limit · model · search) is displayed on the research screen.
+The Brave key is stored in `app/settings.json` (gitignored); it takes precedence over the `BRAVE_API_KEY` env var.
 
 ## Run logs
 

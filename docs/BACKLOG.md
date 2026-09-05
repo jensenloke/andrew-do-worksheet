@@ -4,7 +4,11 @@ Concrete, ordered work items. See [ROADMAP.md](ROADMAP.md) for the higher-level 
 
 ## Bring-your-own-LLM config area (in-app)
 
-- [ ] A settings screen section to paste an API key / pick a provider (OpenRouter,
+- [x] Search-provider config in the settings screen: paste a Brave API key (masked
+      edit), persisted to `settings.json` (gitignored), taking precedence over the
+      `BRAVE_API_KEY` env var; the active backend shows on the settings + research
+      screens. (Other providers' keys/models in-app are still open below.)
+- [ ] A settings screen section for the **LLM** key / provider (OpenRouter,
       DashScope, OpenAI, local Ollama/vLLM/DGX) and model, stored to `settings.json`
       (keys to OS keychain where available), instead of editing `.env` by hand.
 - [ ] Provider presets with sensible defaults (baseURL + recommended model).

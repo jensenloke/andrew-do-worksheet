@@ -15,6 +15,7 @@ import * as cheerio from 'cheerio';
 import TurndownService from 'turndown';
 import { extractText, getDocumentProxy } from 'unpdf';
 import { loadDotEnv } from '../env.js';
+import { loadSettings } from './settings.js';
 
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 prompt-fight-do-agent';
@@ -186,10 +187,26 @@ export async function searchWeb(query: string): Promise<WebResult[]> {
 
 const BRAVE_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 
+/** Brave key, if configured: the in-app settings-screen key wins, then the
+ * BRAVE_API_KEY env var. Empty means web search falls back to DuckDuckGo. */
 function braveApiKey(): string | undefined {
   loadDotEnv();
-  const k = process.env.BRAVE_API_KEY?.trim();
-  return k ? k : undefined;
+  const fromSettings = loadSettings().braveApiKey?.trim();
+  if (fromSettings) return fromSettings;
+  const fromEnv = process.env.BRAVE_API_KEY?.trim();
+  return fromEnv ? fromEnv : undefined;
+}
+/** Where the active Brave key comes from (for display). */
+export function braveKeySource(): 'settings' | 'env' | 'none' {
+  loadDotEnv();
+  if (loadSettings().braveApiKey?.trim()) return 'settings';
+  if (process.env.BRAVE_API_KEY?.trim()) return 'env';
+  return 'none';
+}
+
+/** Which search backend searchWeb() will use right now (for display). */
+export function searchProvider(): 'brave' | 'duckduckgo' {
+  return braveKeySource() === 'none' ? 'duckduckgo' : 'brave';
 }
 /** Brave Search API. Resolves (possibly empty) on success; throws on any error
  * so the caller can fall back. Empty means Brave genuinely has no hits. */
