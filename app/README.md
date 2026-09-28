@@ -25,7 +25,7 @@ any other OpenAI-compatible model.
 ## How a run works
 
 ```
-search any SGX stock (Yahoo) — or pick a rehearsal name   [s = settings]
+search any SGX stock (Yahoo) — or pick a rehearsal name   [/ = search box · s = settings]
         │
         ▼
 prepareContext      market data once + candidate annual-report PDFs once
@@ -37,7 +37,7 @@ N researcher teams (settings: 1–5, default 2) — the five specialist briefs
         │           shareholding · adverse news & regulatory
         ▼
 synthesizer         merges findings, decides structure + modifiers + exclusions,
-        ▼           writes the synthesis (4-6 sentence underwriting view)
+        ▼           writes the synthesis (point-form underwriting view)
 review & override   human re-sets modifiers, toggles exclusions
         ▼
 engine              Tables A–E pricing + ~38 referral triggers;

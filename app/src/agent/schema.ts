@@ -133,7 +133,7 @@ export const ProposalSchema = z.object({
   synthesis: z
     .string()
     .describe(
-      'The closing underwriting view in 4-6 sentences: the risk at a glance, the two or three things that most influence the price, the judgement calls made, and what a senior underwriter should look at before signing',
+      'The closing underwriting view in point form: one bullet per line, each line starting with "- " — the risk at a glance, the two or three things that most influence the price, the judgement calls made, and what a senior underwriter should check before signing. Never a prose paragraph',
     ),
 });
 

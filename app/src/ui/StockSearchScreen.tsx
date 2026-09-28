@@ -2,6 +2,11 @@
  * Stock search — type to search any SGX-listed stock via Yahoo Finance,
  * or browse the full rehearsal universe. One company at a time. The list
  * fills the terminal height and scrolls with the cursor.
+ *
+ * Two input modes: browse (list navigation; s/q hotkeys, / to focus the
+ * search box) and search (typing goes to the query box; esc returns to
+ * browse, keeping results). Hotkeys are gated on mode, never on the query
+ * text, so a search for "singtel" can start with 's'.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -17,6 +22,8 @@ interface Props {
   onQuit: () => void;
   /** Rows available to this screen (terminal height minus frame chrome). */
   rows: number;
+  /** Notified when the search box gains/loses focus (drives the status-bar hints). */
+  onFocusChange?: (focused: boolean) => void;
 }
 
 type Item = StockRef & { hint?: string };
@@ -24,16 +31,26 @@ type Item = StockRef & { hint?: string };
 // Rows reserved for the search title, input, and spacing (keys are in the status bar).
 const CHROME_ROWS = 6;
 
-export function StockSearchScreen({ onPick, onSettings, onQuit, rows }: Props) {
+export function StockSearchScreen({ onPick, onSettings, onQuit, rows, onFocusChange }: Props) {
   const viewport = Math.max(5, rows - CHROME_ROWS);
 
   const [query, setQuery] = useState('');
+  const [focused, setFocused] = useState(false);
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<StockSearchResult[] | null>(null);
   const [cursor, setCursor] = useState(0);
   const [scroll, setScroll] = useState(0);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const seqRef = useRef(0);
+
+  const focusInput = () => {
+    setFocused(true);
+    onFocusChange?.(true);
+  };
+  const blurInput = () => {
+    setFocused(false);
+    onFocusChange?.(false);
+  };
 
   const items: Item[] =
     results !== null
@@ -81,17 +98,22 @@ export function StockSearchScreen({ onPick, onSettings, onQuit, rows }: Props) {
   }, [query]);
 
   useInput((input, key) => {
-    if (query.trim().length === 0) {
+    if (!focused) {
+      // Browse mode: hotkeys and list navigation; typing is not captured here.
       if (input === 's') return onSettings();
       if (input === 'q') return onQuit();
+      if (input === '/') return focusInput();
+    } else {
+      // Search mode: characters go to the input; esc returns to browse.
+      if (key.escape) return blurInput();
     }
     if (key.upArrow) setCursor((c) => Math.max(0, c - 1));
     if (key.downArrow) setCursor((c) => Math.min(Math.max(items.length - 1, 0), c + 1));
     if (key.pageUp) setCursor((c) => Math.max(0, c - viewport));
     if (key.pageDown) setCursor((c) => Math.min(Math.max(items.length - 1, 0), c + viewport));
-    if (key.return && items[cursor]) {
-      const picked = items[cursor]!;
-      onPick({ ticker: picked.ticker, name: picked.name });
+    if (key.return) {
+      const picked = items[cursor];
+      if (picked) onPick({ ticker: picked.ticker, name: picked.name });
     }
   });
 
@@ -113,7 +135,12 @@ export function StockSearchScreen({ onPick, onSettings, onQuit, rows }: Props) {
         <Text bold color="cyan">
           ⌕{' '}
         </Text>
-        <TextInput value={query} onChange={setQuery} placeholder="type a company name or ticker…" />
+        <TextInput
+          value={query}
+          onChange={setQuery}
+          focus={focused}
+          placeholder={focused ? 'type a company name or ticker…' : 'press / to search any SGX stock…'}
+        />
       </Box>
 
       <Box marginTop={1} flexDirection="column">

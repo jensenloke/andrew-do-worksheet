@@ -4,11 +4,19 @@ import { render } from 'ink-testing-library';
 import { StockSearchScreen } from '../src/ui/StockSearchScreen.js';
 import { SplashScreen } from '../src/ui/SplashScreen.js';
 import { ResultsScreen } from '../src/ui/ResultsScreen.js';
+import { CommentScreen } from '../src/ui/CommentScreen.js';
 import { StatusBar } from '../src/ui/StatusBar.js';
 import { DEFAULT_SETTINGS } from '../src/agent/settings.js';
 import { calculate } from '../src/engine/index.js';
 import { toWorksheetInput } from '../src/agent/schema.js';
 import type { Proposal } from '../src/agent/schema.js';
+
+// Let React flush between keystrokes, like a real terminal would.
+const tick = () => {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, 10);
+  return promise;
+};
 
 // Minimal valid proposal to drive the engine for a results render.
 const sampleProposal = {
@@ -62,7 +70,7 @@ const sampleProposal = {
     keyOfficersWithFinanceExperience: 2,
   },
   dataGaps: [],
-  synthesis: 'A clean blue-chip risk with modest share price drift.',
+  synthesis: '- A clean blue-chip risk with modest share price drift.\n- Judgement: held the price/float modifier at 0.95 on the twelve-month rally.',
 } as unknown as Proposal;
 
 describe('TUI renders', () => {
@@ -83,6 +91,68 @@ describe('TUI renders', () => {
     expect(frame).toContain('CapitaLand Integrated Commercial Trust');
     // index 8 — visible at any terminal of 18+ rows
     expect(frame).toContain('ComfortDelGro');
+  });
+
+  it('keeps s/q as hotkeys in browse mode and routes typing to the query after /', async () => {
+    let settings = 0;
+    let quit = 0;
+    const { lastFrame, stdin } = render(
+      <StockSearchScreen onPick={() => {}} onSettings={() => { settings++; }} onQuit={() => { quit++; }} rows={30} />,
+    );
+
+    // Browse mode: bare s opens settings, q quits.
+    stdin.write('s');
+    await tick();
+    expect(settings).toBe(1);
+    stdin.write('q');
+    await tick();
+    expect(quit).toBe(1);
+
+    // The reported bug: after focusing the box, 's' must be search text, not a hotkey.
+    stdin.write('/');
+    await tick();
+    stdin.write('s');
+    await tick();
+    expect(settings).toBe(1);
+    expect(quit).toBe(1);
+    expect(lastFrame() ?? '').toContain('⌕ s');
+
+    // esc returns to browse, where s is a hotkey again.
+    stdin.write('\u001B');
+    await tick();
+    stdin.write('s');
+    await tick();
+    expect(settings).toBe(2);
+  });
+
+  it('submits notes on ⏎⏎ and ctrl-d, and esc discards them', async () => {
+    const stock = { ticker: 'OV8', name: 'Sheng Siong Group Ltd' };
+    let submitted: string | null = null;
+    const { stdin, unmount } = render(
+      <CommentScreen stock={stock} onSubmit={(c) => { submitted = c; }} />,
+    );
+
+    // Typing + one enter = new line, not submit.
+    stdin.write('watch the margins');
+    await tick();
+    stdin.write('\r');
+    await tick();
+    expect(submitted).toBe(null);
+
+    // Second enter on the empty line submits the collected notes.
+    stdin.write('\r');
+    await tick();
+    expect(submitted).toBe('watch the margins');
+    unmount();
+
+    // esc discards whatever was typed.
+    submitted = null;
+    const second = render(<CommentScreen stock={stock} onSubmit={(c) => { submitted = c; }} />);
+    second.stdin.write('draft note');
+    await tick();
+    second.stdin.write('\u001B');
+    await tick();
+    expect(submitted).toBe('');
   });
 
   it('renders the results screen with premium, exclusions and synthesis (formulas hidden by default)', () => {

@@ -38,6 +38,7 @@ export function App() {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const termRows = stdout?.rows ?? 30;
+  const termCols = stdout?.columns ?? 100;
   const [phase, setPhase] = useState<Phase>('splash');
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [stock, setStock] = useState<StockRef | null>(null);
@@ -47,6 +48,7 @@ export function App() {
   const [researchDurationMs, setResearchDurationMs] = useState<number | null>(null);
   const [comments, setComments] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
 
   // Error screen: n = try again, q = quit (the only phase without its own screen).
   // Registered here, before the splash early-return, so the hook order is stable.
@@ -114,6 +116,7 @@ export function App() {
     setResearchDurationMs(null);
     setComments('');
     setErrorMessage('');
+    setSearchFocused(false);
     setPhase('select');
   };
 
@@ -127,7 +130,9 @@ export function App() {
   // Per-screen key hints shown in the pinned status bar.
   const keys =
     phase === 'select'
-      ? '↑↓ move · pgup/pgdn scroll · ⏎ underwrite · s settings · q quit'
+      ? searchFocused
+        ? 'type to search · ↑↓ move · ⏎ underwrite · esc back to list'
+        : '↑↓ move · pgup/pgdn scroll · ⏎ underwrite · / search any SGX stock · s settings · q quit'
       : phase === 'settings'
         ? '←→ / space adjust · e edit Brave key · ⏎ or esc back to search'
         : phase === 'comment'
@@ -135,14 +140,22 @@ export function App() {
           : phase === 'research'
             ? 'watching…   q abort run & return to search'
             : phase === 'review'
-              ? '↑↓ move · ⏎ re-set value · space toggle exclusion · c calculate · q quit'
+              ? '↑↓ move · ⏎ re-set value · space toggle [x] · pgup/pgdn scroll context · c calculate · q quit'
               : phase === 'results'
                 ? 'f toggle formulas · n underwrite another · q quit'
                 : 'n try again · q quit';
 
   let content: React.ReactNode;
   if (phase === 'select') {
-    content = <StockSearchScreen onPick={onPick} onSettings={() => setPhase('settings')} onQuit={quit} rows={termRows - FRAME_CHROME_ROWS} />;
+    content = (
+      <StockSearchScreen
+        onPick={onPick}
+        onSettings={() => setPhase('settings')}
+        onQuit={quit}
+        rows={termRows - FRAME_CHROME_ROWS}
+        onFocusChange={setSearchFocused}
+      />
+    );
   } else if (phase === 'settings') {
     content = <SettingsScreen settings={settings} onChange={setSettings} onBack={() => setPhase('select')} />;
   } else if (phase === 'comment' && stock && logger) {
@@ -163,7 +176,17 @@ export function App() {
       />
     );
   } else if (phase === 'review' && stock && proposal) {
-    content = <ReviewScreen stock={stock} proposal={proposal} comments={comments} onCalculate={onCalculate} onQuit={quit} />;
+    content = (
+      <ReviewScreen
+        stock={stock}
+        proposal={proposal}
+        comments={comments}
+        rows={termRows - FRAME_CHROME_ROWS}
+        columns={termCols}
+        onCalculate={onCalculate}
+        onQuit={quit}
+      />
+    );
   } else if (phase === 'results' && stock && proposal && result) {
     content = (
       <ResultsScreen

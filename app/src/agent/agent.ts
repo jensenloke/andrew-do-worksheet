@@ -76,7 +76,7 @@ Weak financial strength ⇒ modifier 1 ≥ 1.00 · High litigation exposure ⇒ 
 ## Leveling assumptions (fixed, non-negotiable)
 Q17 claims = 0 · Q18 known circumstance = false · Q19 previously declined = false · Q20 expiring premium = 0 (new policy). Employee headcount = 200 if it matters.
 
-Carry each researcher's rationale and source into the answer fields verbatim where you use them. Merge all dataGaps. Where researchers disagree, prefer the better-sourced finding and say so in the rationale. Finish with the synthesis: the underwriting view in 4-6 sentences.`;
+Carry each researcher's rationale and source into the answer fields verbatim where you use them. Merge all dataGaps. Where researchers disagree, prefer the better-sourced finding and say so in the rationale. Finish with the synthesis — the underwriting view in POINT FORM, never prose paragraphs. One bullet per line, each line starting with "- ", in this order: one bullet giving the risk at a glance; the two or three facts that most influence the price (one bullet each, naming the modifier or exclusion it drives); the judgement calls you made (one bullet each: what you chose and why); what a senior underwriter should check before signing. Keep every bullet to one or two lines and keep the figures in it.`;
 
 export interface RunOptions {
   stock: StockRef;
@@ -147,8 +147,12 @@ export async function runResearchAgent({ stock, signal, onEvent, logger, setting
   const synthesisController = new AbortController();
   const onOuterAbort = () => synthesisController.abort();
   signal?.addEventListener('abort', onOuterAbort, { once: true });
-  const SYNTHESIS_WATCHDOG_MS = 8 * 60_000;
-  const watchdog = setTimeout(() => synthesisController.abort(), SYNTHESIS_WATCHDOG_MS);
+  const SYNTHESIS_WATCHDOG_MS = 12 * 60_000;
+  let synthesisTimedOut = false;
+  const watchdog = setTimeout(() => {
+    synthesisTimedOut = true;
+    synthesisController.abort();
+  }, SYNTHESIS_WATCHDOG_MS);
 
   let proposal: Proposal | undefined;
   try {
@@ -202,7 +206,9 @@ Assemble the complete proposal now and submit it with submitProposal. Be decisiv
     signal?.removeEventListener('abort', onOuterAbort);
   }
   if (!proposal) {
-    const message = 'Synthesis finished without submitting a proposal.';
+    const message = synthesisTimedOut
+      ? `Synthesis hit the ${SYNTHESIS_WATCHDOG_MS / 60_000}-minute watchdog before the model submitted a proposal — the local model was too slow or stalled. Retry, reduce sub-agent teams, or check model connectivity (npm run check-model).`
+      : 'Synthesis finished without submitting a proposal.';
     emit({ type: 'error', message });
     throw new Error(message);
   }

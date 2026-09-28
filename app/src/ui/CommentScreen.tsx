@@ -3,8 +3,9 @@
  * notes ("they just lost a major contract", "watch the Indonesia segment") that
  * are threaded into the research and synthesis prompts so the AI weighs them.
  *
- * Multiline editor: type = add char, enter = new line, backspace = delete,
- * ctrl-d (or esc) = done & continue. Empty = skip.
+ * Multiline editor: type = add char, enter = new line, enter on an empty
+ * line (⏎⏎) or ctrl-d = done & continue, esc = skip (discards the notes).
+ * Backspace at the start of a line merges the previous line back for editing.
  */
 
 import React, { useState } from 'react';
@@ -27,11 +28,22 @@ export function CommentScreen({ stock, onSubmit }: Props) {
 
   useInput((input, key) => {
     if (key.ctrl && input === 'd') return submit();
-    if (key.escape) return submit();
-    if (key.return) return setLines((l) => [...l, current]), setCurrent('');
+    if (key.escape) return onSubmit(''); // true skip: discard whatever was typed
+    if (key.return) {
+      if (current === '') return submit(); // ⏎⏎ continue (empty box = skip)
+      setLines((l) => [...l, current]);
+      setCurrent('');
+      return;
+    }
     if (key.backspace || (key.delete && input === '')) {
-      if (current.length > 0) return setCurrent((c) => c.slice(0, -1));
-      return setLines((l) => l.slice(0, -1)); // merge previous line back? simple: drop newline
+      if (current.length > 0) {
+        setCurrent((c) => c.slice(0, -1));
+      } else if (lines.length > 0) {
+        // Merge the previous line back for editing instead of dropping it.
+        setCurrent(lines[lines.length - 1]!);
+        setLines((l) => l.slice(0, -1));
+      }
+      return;
     }
     if (input && !key.ctrl && !key.meta) return setCurrent((c) => c + input);
   }, { isActive: true });

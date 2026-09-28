@@ -68,7 +68,8 @@ live config (model · search · teams · thinking · limit), the bottom line sho
 keys for the current screen.
 
 - Splash: `space`/`enter` to continue
-- Search: `↑↓` move, `pgup/pgdn` scroll, `enter` underwrite, `s` settings, `q` quit
+- Search: `↑↓` move, `pgup/pgdn` scroll, `enter` underwrite, `/` focus the query box
+  (type freely — `s`/`q` are text there), `esc` back to the list, `s` settings, `q` quit
 - Notes: type freely, `enter` new line, `ctrl-d` / double `enter` continue, `esc` skip
 - Research: `q`/`Esc` abort
 - Review: `↑↓` move, `enter` re-set a modifier, `space` toggle exclusion, `c` calculate, `q` quit

@@ -1,7 +1,14 @@
 /**
  * Review & override — the "human governs" screen.
- * Shows the agent's full proposal; the user can re-set any modifier value and
- * toggle exclusions before the deterministic engine calculates.
+ *
+ * The proposal is composed into a point-form document of pre-wrapped,
+ * one-terminal-row display lines. On a terminal tall enough for the
+ * interactive list (modifiers + exclusions checklist), that list is pinned
+ * fully visible at the bottom and the read-only context (structure, notes,
+ * synthesis, Part 1 answers, data gaps) scrolls above it with pgup/pgdn.
+ * On shorter terminals the whole document becomes one cursor-following
+ * window. Every row is exactly one line: text is wrapped or clipped at
+ * compose time, never left to ragged terminal wrapping or frame clipping.
  */
 
 import React, { useState } from 'react';
@@ -16,6 +23,10 @@ interface Props {
   stock: StockRef;
   proposal: Proposal;
   comments: string;
+  /** Content rows available to this screen (terminal height minus frame chrome). */
+  rows: number;
+  /** Terminal width in columns. */
+  columns: number;
   onCalculate: (input: WorksheetInput) => void;
   onQuit: () => void;
 }
@@ -29,6 +40,29 @@ const MODIFIER_LABELS = [
 ] as const;
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+
+/** Clip a string to a display width, marking the truncation. */
+const clip = (s: string, w: number) => (s.length > w ? `${s.slice(0, Math.max(1, w - 1))}…` : s);
+
+/** Word-wrap to a display width; over-long words are hard-broken. */
+function wrapText(text: string, width: number): string[] {
+  const out: string[] = [];
+  let cur = '';
+  for (const word of text.split(/\s+/)) {
+    if (!word) continue;
+    if (cur && cur.length + 1 + word.length > width) {
+      out.push(cur);
+      cur = '';
+    }
+    cur = cur ? `${cur} ${word}` : word;
+    while (cur.length > width) {
+      out.push(cur.slice(0, width));
+      cur = cur.slice(width);
+    }
+  }
+  if (cur) out.push(cur);
+  return out.length ? out : [''];
+}
 
 function answerRows(p: Proposal): Array<{ label: string; value: string; source: string }> {
   const a = p.answers;
@@ -56,7 +90,31 @@ function answerRows(p: Proposal): Array<{ label: string; value: string; source: 
   ];
 }
 
-export function ReviewScreen({ stock, proposal, comments, onCalculate, onQuit }: Props) {
+/** One styled run of text within a display line. */
+interface Seg {
+  t: string;
+  dim?: boolean;
+  bold?: boolean;
+  color?: string;
+  inverse?: boolean;
+  underline?: boolean;
+}
+
+/** One terminal row of the document; `item` marks cursor-targetable rows. */
+interface Line {
+  segs: Seg[];
+  item?: number;
+}
+
+/** Max rows the active modifier's rationale may occupy (bounds the pinned list). */
+const RATIONALE_ROWS = 2;
+/** Context rows kept visible above the pinned list before falling back to one scrolling doc. */
+const MIN_CONTEXT_ROWS = 4;
+
+export function ReviewScreen({ stock, proposal, comments, rows, columns, onCalculate, onQuit }: Props) {
+  const width = Math.max(40, columns - 2); // the screen's own paddingX={1}
+  const viewport = Math.max(5, rows);
+
   const modifierValues = [
     proposal.modifiers.financialStrength.value,
     proposal.modifiers.governanceAndOwnership.value,
@@ -76,6 +134,7 @@ export function ReviewScreen({ stock, proposal, comments, onCalculate, onQuit }:
   const [applied, setApplied] = useState<Set<string>>(new Set(proposal.proposedExclusions));
   const [cursor, setCursor] = useState(0);
   const [draft, setDraft] = useState<string | null>(null);
+  const [contextScroll, setContextScroll] = useState(0);
 
   const itemCount = MODIFIER_LABELS.length + EXCLUSIONS.length;
 
@@ -94,6 +153,131 @@ export function ReviewScreen({ stock, proposal, comments, onCalculate, onQuit }:
     };
   };
 
+  // ── Compose: context lines (read-only) + list lines (cursor targets) ─
+  const contextLines: Line[] = [];
+  const listLines: Line[] = [];
+  const to = (sink: Line[]) => ({
+    push: (segs: Seg[], item?: number) => sink.push({ segs, item }),
+    pushWrapped: (text: string, style: Omit<Seg, 't'>, indent: string) => {
+      for (const l of wrapText(text, width - indent.length)) sink.push({ segs: [{ ...style, t: indent + l }] });
+    },
+  });
+  const ctx = to(contextLines);
+  const lst = to(listLines);
+
+  ctx.push([{ t: clip(`Review & override — ${proposal.companyName || stock.name} (${stock.ticker})`, width), bold: true, color: 'cyan' }]);
+  ctx.push([{ t: clip(`- structure: ${proposal.structure.limit} limit · ${proposal.structure.retention} retention · ${proposal.structure.hazardClass} — ${proposal.structure.hazardRationale}`, width), dim: true }]);
+
+  if (comments.trim()) {
+    ctx.push([{ t: ' ' }]);
+    ctx.push([{ t: 'Your notes (fed to the researchers)', bold: true, color: 'yellow' }]);
+    for (const note of comments.trim().split('\n')) ctx.pushWrapped(note, { dim: true }, '- ');
+  }
+
+  ctx.push([{ t: ' ' }]);
+  ctx.push([{ t: 'Synthesis', bold: true, underline: true }]);
+  for (const raw of proposal.synthesis.split('\n')) {
+    const text = raw.trim();
+    if (!text) continue;
+    ctx.pushWrapped(text.replace(/^[-•*]\s*/, ''), {}, '- ');
+  }
+
+  ctx.push([{ t: ' ' }]);
+  ctx.push([{ t: 'Part 1 answers', bold: true, underline: true }]);
+  const grid = answerRows(proposal);
+  const gridLines = Math.ceil(grid.length / 2);
+  const labelW = 29;
+  const half = Math.floor(width / 2);
+  for (let i = 0; i < gridLines; i++) {
+    const l = grid[i]!;
+    const r = grid[i + gridLines];
+    const lValue = clip(l.value, Math.max(6, half - labelW - 1));
+    const segs: Seg[] = [
+      { t: l.label.padEnd(labelW), dim: true },
+      { t: lValue, bold: true },
+    ];
+    if (r) {
+      segs.push({ t: ' '.repeat(Math.max(2, half - labelW - lValue.length)) });
+      segs.push({ t: r.label.padEnd(labelW), dim: true });
+      segs.push({ t: clip(r.value, Math.max(6, width - half - labelW - 1)), bold: true });
+    }
+    ctx.push(segs);
+  }
+
+  if (proposal.dataGaps.length > 0) {
+    ctx.push([{ t: ' ' }]);
+    ctx.push([{ t: 'Data gaps (agent could not establish)', bold: true, color: 'yellow' }]);
+    for (const g of proposal.dataGaps) ctx.pushWrapped(g, { color: 'yellow', dim: true }, '- ');
+  }
+
+  lst.push([{ t: 'Modifiers — ⏎ re-set a value', bold: true, underline: true }]);
+  MODIFIER_LABELS.forEach((label, i) => {
+    const active = cursor === i;
+    const overridden = overrides[i] !== modifierValues[i];
+    const editing = draft !== null && cursor === i;
+    const segs: Seg[] = [
+      { t: active ? '❯ ' : '  ', color: active ? 'cyan' : undefined },
+      { t: label.padEnd(40), color: active ? 'cyan' : undefined },
+      editing
+        ? { t: `[${draft ?? ''} `, inverse: true }
+        : { t: overrides[i]!.toFixed(2), bold: true, color: overridden ? 'yellow' : active ? 'cyan' : undefined },
+    ];
+    if (editing) {
+      segs.push({ t: `] `, inverse: true });
+      segs.push({ t: ` ⏎ set · esc cancel · was ${modifierValues[i]!.toFixed(2)} · range 0.50–3.50`, dim: true });
+    } else if (overridden) {
+      segs.push({ t: ` (agent: ${modifierValues[i]!.toFixed(2)})`, color: 'yellow' });
+    }
+    lst.push(segs, i);
+    if (active && modifierRationales[i]) {
+      const wrapped = wrapText(modifierRationales[i], width - 6).slice(0, RATIONALE_ROWS);
+      wrapped.forEach((l, j) =>
+        lst.push([{ t: '    ' + (j === wrapped.length - 1 ? clip(l, width - 4) : l), dim: true }]),
+      );
+    }
+  });
+
+  lst.push([{ t: ' ' }]);
+  lst.push([{ t: 'Exclusions — space marks [x]', bold: true, underline: true }]);
+  EXCLUSIONS.forEach((excl, i) => {
+    const item = MODIFIER_LABELS.length + i;
+    const active = cursor === item;
+    const on = applied.has(excl.id);
+    const recommended = proposal.proposedExclusions.includes(excl.id as (typeof proposal.proposedExclusions)[number]);
+    const effect = ` (${(excl.effect * 100).toFixed(1)}%)`;
+    const marker = !on && recommended ? ' — agent recommends' : '';
+    const prefix = `${active ? '❯' : ' '} ${on ? '[x]' : '[ ]'} `;
+    const nameW = Math.max(12, width - prefix.length - effect.length - marker.length);
+    lst.push(
+      [
+        { t: prefix, color: active ? 'cyan' : undefined },
+        { t: clip(excl.name, nameW), bold: on, color: active ? 'cyan' : undefined },
+        { t: effect, dim: !on, color: on ? 'green' : undefined },
+        ...(marker ? [{ t: marker, color: 'yellow' }] : []),
+      ],
+      item,
+    );
+  });
+
+  // ── Layout: pinned list + scrolling context, or one cursor-following doc ─
+  const splitMode = viewport >= listLines.length + MIN_CONTEXT_ROWS;
+  const contextViewport = splitMode ? viewport - listLines.length : 0;
+  const contextMax = Math.max(0, contextLines.length - contextViewport);
+  const clampedContextScroll = Math.min(contextScroll, contextMax);
+
+  let visible: Line[];
+  if (splitMode) {
+    visible = [...contextLines.slice(clampedContextScroll, clampedContextScroll + contextViewport), ...listLines];
+  } else {
+    const all = [...contextLines, ...listLines];
+    const cursorLine = Math.max(0, all.findIndex((l) => l.item === cursor));
+    const margin = 2;
+    let scroll = 0;
+    if (cursorLine + margin + 1 > viewport) scroll = cursorLine + margin + 1 - viewport;
+    scroll = Math.max(0, Math.min(scroll, Math.max(0, cursorLine - margin)));
+    visible = all.slice(scroll, scroll + viewport);
+  }
+
   useInput((input, key) => {
     if (draft !== null) {
       if (key.return) {
@@ -106,7 +290,7 @@ export function ReviewScreen({ stock, proposal, comments, onCalculate, onQuit }:
         setDraft(null);
       } else if (key.delete || input === '\b' || input === '\u007f') {
         setDraft((d) => (d ?? '').slice(0, -1));
-      } else if (/^[0-9.]$/.test(input)) {
+      } else if (/^[0-9.]+$/.test(input) && (draft ?? '').length + input.length <= 8) {
         setDraft((d) => (d ?? '') + input);
       }
       return;
@@ -114,9 +298,11 @@ export function ReviewScreen({ stock, proposal, comments, onCalculate, onQuit }:
 
     if (key.upArrow) setCursor((c) => Math.max(0, c - 1));
     if (key.downArrow) setCursor((c) => Math.min(itemCount - 1, c + 1));
+    if (splitMode && key.pageUp) setContextScroll((s) => Math.max(0, s - contextViewport));
+    if (splitMode && key.pageDown) setContextScroll((s) => Math.min(contextMax, s + contextViewport));
 
     const isModifier = cursor < MODIFIER_LABELS.length;
-    if (isModifier && key.return) setDraft(String(overrides[cursor]));
+    if (isModifier && key.return) setDraft('');
     if (!isModifier && (input === ' ' || key.return)) {
       const excl = EXCLUSIONS[cursor - MODIFIER_LABELS.length]!;
       setApplied((s) => {
@@ -130,129 +316,17 @@ export function ReviewScreen({ stock, proposal, comments, onCalculate, onQuit }:
     if (input === 'q') onQuit();
   });
 
-  const rows = answerRows(proposal);
-  const left = rows.slice(0, 10);
-  const right = rows.slice(10);
-
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Box>
-        <Text bold color="cyan">
-          Review &amp; override — {proposal.companyName} ({stock.ticker})
-        </Text>
-      </Box>
-      <Text dimColor>{proposal.businessSummary.slice(0, 160)}</Text>
-
-      {comments.trim() ? (
-        <Box marginTop={1} flexDirection="column">
-          <Text bold color="yellow">
-            Your notes (fed to the researchers)
-          </Text>
-          {comments
-            .trim()
-            .split('\n')
-            .map((l, i) => (
-              <Text key={i} dimColor>
-                {'  '}{l}
-              </Text>
-            ))}
-        </Box>
-      ) : null}
-
-      <Box marginTop={1} flexDirection="column">
-        <Text bold underline>
-          Synthesis
-        </Text>
-        <Text wrap="wrap">{proposal.synthesis}</Text>
-      </Box>
-
-      <Box marginTop={1}>
-        <Box flexDirection="column" width="50%">
-          {left.map((r) => (
-            <Text key={r.label}>
-              <Text dimColor>{r.label.padEnd(26)}</Text>
-              <Text bold>{r.value}</Text>
+      {visible.map((ln, i) => (
+        <Text key={i} wrap="truncate">
+          {ln.segs.map((s, j) => (
+            <Text key={j} dimColor={s.dim} bold={s.bold} color={s.color} inverse={s.inverse} underline={s.underline}>
+              {s.t}
             </Text>
           ))}
-        </Box>
-        <Box flexDirection="column">
-          {right.map((r) => (
-            <Text key={r.label}>
-              <Text dimColor>{r.label.padEnd(26)}</Text>
-              <Text bold>{r.value}</Text>
-            </Text>
-          ))}
-        </Box>
-      </Box>
-
-      <Box marginTop={1} flexDirection="column">
-        <Text bold underline>
-          Modifiers — enter to re-set a value
         </Text>
-        {MODIFIER_LABELS.map((label, i) => {
-          const active = cursor === i;
-          const overridden = overrides[i] !== modifierValues[i];
-          const editing = draft !== null && cursor === i;
-          return (
-            <Box key={label} flexDirection="column">
-              <Text color={active ? 'cyan' : undefined}>
-                {active ? '❯ ' : '  '}
-                {label.padEnd(42)}
-                {editing ? (
-                  <Text inverse>{(draft ?? '') + ' '}</Text>
-                ) : (
-                  <Text bold color={overridden ? 'yellow' : undefined}>
-                    {overrides[i]!.toFixed(2)}
-                  </Text>
-                )}
-                {overridden && !editing ? <Text color="yellow"> (agent: {modifierValues[i]!.toFixed(2)})</Text> : null}
-              </Text>
-              {active ? <Text dimColor>   {modifierRationales[i]}</Text> : null}
-            </Box>
-          );
-        })}
-      </Box>
-
-      <Box marginTop={1} flexDirection="column">
-        <Text bold underline>
-          Exclusions — space to toggle
-        </Text>
-        {EXCLUSIONS.map((excl, i) => {
-          const idx = MODIFIER_LABELS.length + i;
-          const active = cursor === idx;
-          const on = applied.has(excl.id);
-          const recommended = proposal.proposedExclusions.includes(excl.id as (typeof proposal.proposedExclusions)[number]);
-          return (
-            <Text key={excl.id} color={active ? 'cyan' : undefined}>
-              {active ? '❯ ' : '  '}
-              {on ? '[x] ' : '[ ] '}
-              {excl.name}
-              {on ? <Text color="green"> ({(excl.effect * 100).toFixed(1)}%)</Text> : null}
-              {!on && recommended ? <Text color="yellow"> — agent recommends</Text> : null}
-            </Text>
-          );
-        })}
-      </Box>
-
-      {proposal.dataGaps.length > 0 ? (
-        <Box marginTop={1} flexDirection="column">
-          <Text color="yellow" bold>
-            Data gaps (agent could not establish):
-          </Text>
-          {proposal.dataGaps.map((g, i) => (
-            <Text key={i} color="yellow">
-              {'  '}- {g}
-            </Text>
-          ))}
-        </Box>
-      ) : null}
-
-      <Box marginTop={1}>
-        <Text dimColor>
-          structure: {proposal.structure.limit} limit · {proposal.structure.retention} retention ·{' '}
-          {proposal.structure.hazardClass} ({proposal.structure.hazardRationale.slice(0, 60)})
-        </Text>
-      </Box>
+      ))}
     </Box>
   );
 }

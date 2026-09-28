@@ -113,7 +113,11 @@ export function ResultsScreen({ companyName, input, output, appliedExclusions, s
         <Text bold underline>
           Underwriting synthesis
         </Text>
-        <Text wrap="wrap">{synthesis}</Text>
+        {synthesis.split('\n').map((line, i) => (
+          <Text key={i} wrap="wrap">
+            {line}
+          </Text>
+        ))}
       </Box>
 
     </Box>
